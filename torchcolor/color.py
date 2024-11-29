@@ -1,3 +1,4 @@
+from typing import Union
 
 color_4bits_fg = {
     "black": 30,
@@ -37,7 +38,13 @@ color_4bits_bg = {
     "bright white": 107
 }
 
-def colorize(text:str, text_color: str = None, bg_color: str = None) -> str:
+def hex_to_rgb(hex_color):
+    """Convert a hex color string (e.g., "#RRGGBB") to an RGB tuple."""
+    hex_color = hex_color.lstrip("#").lower()
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+def colorize(text: str, text_color: Union[str, tuple[int]] = None, bg_color: Union[str, tuple[int]] = None) -> str:
     """Colorize the console text with a foreground and background color
 
     Args:
@@ -48,9 +55,38 @@ def colorize(text:str, text_color: str = None, bg_color: str = None) -> str:
     Returns:
         str: Formatted console ANSI escape code for colorizing text
     """
+    foreground_color = ""
+    background_color = ""
+
+    if isinstance(text_color, tuple):
+        if len(text_color) != 3:
+            raise TypeError("text_color of type tuple does not have length 3 for (red, green blue) components.")
+        red, green, blue = text_color
+        foreground_color = f"\033[38;2;{red};{green};{blue}m"
+    elif isinstance(text_color, str) and len(text_color) > 0:
+        if text_color not in color_4bits_fg.keys():
+            if text_color[0] != '#': text_color = '#'+text_color
+            red, green, blue = hex_to_rgb(text_color)
+            foreground_color = f"\033[38;2;{red};{green};{blue}m"
+        else:
+            foreground_color = f"\033[{color_4bits_fg[text_color]}m"
+
+    if isinstance(bg_color, tuple):
+        if len(bg_color) != 3:
+            raise TypeError("bg_color of type tuple does not have length 3 for (red, green blue) components.")
+        red, green, blue = bg_color
+        background_color = f"\033[48;2;{red};{green};{blue}m"
+    elif isinstance(bg_color, str) and len(bg_color) > 0:
+        if bg_color not in color_4bits_bg.keys():
+            if bg_color[0] != '#': bg_color = '#'+bg_color
+            red, green, blue = hex_to_rgb(bg_color)
+            background_color = f"\033[48;2;{red};{green};{blue}m"
+        else:
+            background_color = f"\033[{color_4bits_bg[bg_color]}m"
+
     return (
-        (f"\033[{color_4bits_fg[text_color]}m" if text_color else "") +
-        (f"\033[{color_4bits_bg[bg_color]}m" if bg_color else "") +
+        foreground_color +
+        background_color +
         text +
         "\033[0m"
     )
