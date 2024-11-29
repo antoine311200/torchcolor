@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchcolor"
+version = "0.1.0"
+description = "A lightweight Python package for PyTorch that enhances readability by color-coding module prints based on their trainable status."
+authors = [
+    {name = "Antoine Debouchage", email = "antoine311200@gmail.com"}
+]
+dependencies = ["torch"]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
