@@ -45,5 +45,6 @@ if __name__ == "__main__":
     print("Model loaded")
     printer.print(model)
 
-    with torch.no_grad():
-        printer.print(model)
+    for param in model.parameters():
+        param.requires_grad = False
+    printer.print(model)
