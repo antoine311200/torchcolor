@@ -58,10 +58,10 @@ class Printer:
     def __init__(self, strategy: Union[str, ColorStrategy]):
         self.set_strategy(strategy)
 
-    def set_strategy(self, strategy: Union[str, ColorStrategy]):
+    def set_strategy(self, strategy: Union[str, ColorStrategy], *args, **kwargs):
         """Change the strategy dynamically."""
         if isinstance(strategy, str):
-            strategy = ColorStrategy.get_strategy(strategy)
+            strategy = ColorStrategy.get_strategy(strategy, *args, **kwargs)
         self.strategy = strategy
 
     def print(self, module):
