@@ -1,5 +1,5 @@
 from torchcolor import Printer
-from torchcolor.strategy import TrainableColorStrategy
+from torchcolor.strategy import ConstantColorStrategy
 
 from transformers import AutoModelForSequenceClassification
 
@@ -41,10 +41,11 @@ if __name__ == "__main__":
     # model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
     # model = SimpleModel()
     model = DiverseModel()
-    printer = Printer(strategy=TrainableColorStrategy())
-    print("Model loaded")
+    printer = Printer(strategy="trainable")
     printer.print(model)
 
-    for param in model.parameters():
-        param.requires_grad = False
+    printer.set_strategy(ConstantColorStrategy((124, 210, 79)))
     printer.print(model)
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    # printer.print(model)

@@ -1,3 +1,5 @@
+from typing import Union
+
 from .strategy import ColorStrategy
 from .color import colorize
 
@@ -53,11 +55,13 @@ def summarize_repeated_modules(lines):
 
 class Printer:
 
-    def __init__(self, strategy: ColorStrategy):
-        self.strategy = strategy
+    def __init__(self, strategy: Union[str, ColorStrategy]):
+        self.set_strategy(strategy)
 
-    def set_strategy(self, strategy: ColorStrategy):
+    def set_strategy(self, strategy: Union[str, ColorStrategy]):
         """Change the strategy dynamically."""
+        if isinstance(strategy, str):
+            strategy = ColorStrategy.get_strategy(strategy)
         self.strategy = strategy
 
     def print(self, module):
