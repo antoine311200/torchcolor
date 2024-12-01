@@ -1,13 +1,22 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Union
 
 from torch.nn import Module
+
+from .color import TextColor, Color
+
+@dataclass
+class ModuleColor:
+    color_name: TextColor = None
+    color_descr: TextColor = None
+
 
 class ColorStrategy(ABC):
     _registry = {}
 
     @abstractmethod
-    def get_color(self, module: Module) -> str:
+    def get_color(self, module: Module) -> ModuleColor:
         """Return the appropriate color for the module based on some properties given by the strategy
 
         Args:
@@ -58,17 +67,18 @@ class ColorStrategy(ABC):
         """Return a list of all available strategy keys."""
         return list(cls._registry.keys())
 
+
 @ColorStrategy.register("trainable")
 class TrainableColorStrategy(ColorStrategy):
     def get_color(self, module):
         params = list(module.parameters(recurse=True))
         if not params:
-            return ""
+            return ModuleColor()
         elif all(not p.requires_grad for p in params):
-            return "red"
+            return ModuleColor(color_name=TextColor("red"))
         elif all(p.requires_grad for p in params):
-            return "green"
-        return "yellow"
+            return ModuleColor(color_name=TextColor("green"), color_descr=TextColor("black", "bright magenta"))
+        return ModuleColor(color_name=TextColor("yellow"))
 
 class LayerColorStrategy(ColorStrategy):
     def get_color(self, module):
@@ -80,4 +90,4 @@ class ConstantColorStrategy(ColorStrategy):
         self.color = color
 
     def get_color(self, module):
-        return self.color
+        return ModuleColor(color_name=TextColor(self.color))

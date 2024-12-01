@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from typing import Union
 
-color_4bits_fg = {
+foreground_colors = {
+    "reset": 0,
     "black": 30,
     "red": 31,
     "green": 32,
@@ -19,7 +21,7 @@ color_4bits_fg = {
     "bright white": 97,
 }
 
-color_4bits_bg = {
+background_colors = {
     "black": 40,
     "red": 41,
     "green": 42,
@@ -43,8 +45,69 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip("#").lower()
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+@dataclass
+class Color:
+    value: Union[str, tuple[int, int, int]]
 
-def colorize(text: str, text_color: Union[str, tuple[int]] = None, bg_color: Union[str, tuple[int]] = None) -> str:
+    def to_rgb(self) -> tuple[int, int, int]:
+        if isinstance(self.value, tuple):
+            if len(self.value) != 3:
+                raise ValueError("RGB color must have three components (R, G, B).")
+            if any(int(component) != component or component > 255 or component < 0 for component in self.value):
+                raise ValueError("RGB components must be integers in the range [0, 255]")
+            return self.value
+        elif isinstance(self.value, str):
+            if self.value in foreground_colors or self.value in background_colors:
+                raise ValueError("Cannot convert named 4-bit colors to RGB directly.")
+            if not self.value.startswith("#"):
+                self.value = f"#{self.value}"
+            return hex_to_rgb(self.value)
+        else:
+            raise TypeError("Unsupported color format.")
+
+
+    def to_hex(self) -> str:
+        if isinstance(self.value, str):
+            pass
+
+    def to_ansi(self, is_background: bool = False) -> str:
+        if self.value is None:
+            return ""
+        elif isinstance(self.value, tuple):
+            red, green, blue = self.value
+            return f"\033[{48 if is_background else 38};2;{red};{green};{blue}m"
+        elif isinstance(self.value, str):
+            color_map = background_colors if is_background else foreground_colors
+            if self.value in color_map:
+                return f"\033[{color_map[self.value]}m"
+            else:
+                red, green, blue = self.to_rgb()
+                return f"\033[{48 if is_background else 38};2;{red};{green};{blue}m"
+        else:
+            raise TypeError("Unsupported color format.")
+
+reset_color = Color("reset")
+
+
+@dataclass
+class TextColor:
+    fg_color: Color = None
+    bg_color: Color = None
+
+    def __init__(self, fg_color: Union[Color, str, tuple[int, int, int]] = None, bg_color: Union[Color, str, tuple[int, int, int]] = None):
+        if not isinstance(fg_color, Color):
+            self.fg_color = Color(fg_color)
+        if not isinstance(bg_color, Color):
+            self.bg_color = Color(bg_color)
+
+    def apply(self, text: str) -> str:
+        return reset_color.to_ansi() + self.fg_color.to_ansi() + self.bg_color.to_ansi(is_background=True) + text + reset_color.to_ansi()
+
+def colorize(
+    text: str,
+    text_color: Union[Color, str, tuple[int, int, int]] = None,
+    bg_color: Union[Color, str, tuple[int, int, int]] = None
+) -> str:
     """Colorize the console text with a foreground and background color
 
     Args:
@@ -55,41 +118,10 @@ def colorize(text: str, text_color: Union[str, tuple[int]] = None, bg_color: Uni
     Returns:
         str: Formatted console ANSI escape code for colorizing text
     """
-    foreground_color = ""
-    background_color = ""
+    foreground_color = text_color if isinstance(text_color, Color) else Color(text_color)
+    background_color = bg_color if isinstance(bg_color, Color) else Color(bg_color)
 
-    if isinstance(text_color, tuple):
-        if len(text_color) != 3:
-            raise TypeError("text_color of type tuple does not have length 3 for (red, green blue) components.")
-        red, green, blue = text_color
-        foreground_color = f"\033[38;2;{red};{green};{blue}m"
-    elif isinstance(text_color, str) and len(text_color) > 0:
-        if text_color not in color_4bits_fg.keys():
-            if text_color[0] != '#': text_color = '#'+text_color
-            red, green, blue = hex_to_rgb(text_color)
-            foreground_color = f"\033[38;2;{red};{green};{blue}m"
-        else:
-            foreground_color = f"\033[{color_4bits_fg[text_color]}m"
-
-    if isinstance(bg_color, tuple):
-        if len(bg_color) != 3:
-            raise TypeError("bg_color of type tuple does not have length 3 for (red, green blue) components.")
-        red, green, blue = bg_color
-        background_color = f"\033[48;2;{red};{green};{blue}m"
-    elif isinstance(bg_color, str) and len(bg_color) > 0:
-        if bg_color not in color_4bits_bg.keys():
-            if bg_color[0] != '#': bg_color = '#'+bg_color
-            red, green, blue = hex_to_rgb(bg_color)
-            background_color = f"\033[48;2;{red};{green};{blue}m"
-        else:
-            background_color = f"\033[{color_4bits_bg[bg_color]}m"
-
-    return (
-        foreground_color +
-        background_color +
-        text +
-        "\033[0m"
-    )
+    return TextColor(foreground_color, background_color).apply(text)
 
 def print_color(text:str, text_color: str = None, bg_color: str = None) -> str:
     print(colorize(text, text_color=text_color, bg_color=bg_color))
