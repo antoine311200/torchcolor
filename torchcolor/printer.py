@@ -1,7 +1,8 @@
+from dataclasses import dataclass
 from typing import Union
 
 from .strategy import ColorStrategy, ModuleColor
-from .color import colorize
+from .color import reset_color
 
 # Function for adding indent from the pytorch codebase in /torch/nn/modules/module.py
 def _addindent(s_, numSpaces):
@@ -47,11 +48,16 @@ def summarize_repeated_modules(lines):
     # # Handle the last group
     if count > 0:
         grouped_lines.pop()
+        # Need to change to add count apart the description for better coloring
         grouped_lines.append(
             (f"{start_index}-{len(lines)-1}", f"{count + 1} x {mod_str}", previous_color, depth)
         )
 
     return grouped_lines
+
+@dataclass
+class ModuleParam:
+    is_leaf: bool
 
 class Printer:
 
@@ -82,8 +88,8 @@ class Printer:
             if module is None:
                 continue
 
-            color: ModuleColor = self.strategy.get_color(module)
             mod_str, module_depth = self.repr_module(module, indent=indent + 2)
+            color: ModuleColor = self.strategy.get_color(module, ModuleParam(is_leaf=module_depth == 0))
             max_depth = max(module_depth+1, max_depth)
             child_lines.append((key, mod_str, color, module_depth))
 
@@ -102,6 +108,8 @@ class Printer:
             if len(extra_lines) == 1 and not child_lines_formatted:
                 main_str += "(" + extra_lines[0] + ")"
             else:
-                main_str += "(\n  " + "\n  ".join(lines) + "\n)"
+                main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
+        color: ModuleColor = self.strategy.get_color(parent_module, ModuleParam(is_leaf=max_depth == 0))
+        main_str = color.color_descr.apply(main_str) if color.color_descr else main_str
         return main_str, max_depth

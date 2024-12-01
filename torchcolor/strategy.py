@@ -16,11 +16,12 @@ class ColorStrategy(ABC):
     _registry = {}
 
     @abstractmethod
-    def get_color(self, module: Module) -> ModuleColor:
+    def get_color(self, module: Module, params: dict) -> ModuleColor:
         """Return the appropriate color for the module based on some properties given by the strategy
 
         Args:
             module (Module): A Pytorch module
+            params (dict): A dictionary with special parameters of the tree module node
 
         Returns:
             str: Color of the module
@@ -70,14 +71,17 @@ class ColorStrategy(ABC):
 
 @ColorStrategy.register("trainable")
 class TrainableColorStrategy(ColorStrategy):
-    def get_color(self, module):
+    def get_color(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleColor()
         elif all(not p.requires_grad for p in params):
             return ModuleColor(color_name=TextColor("red"))
         elif all(p.requires_grad for p in params):
-            return ModuleColor(color_name=TextColor("green"), color_descr=TextColor("black", "bright magenta"))
+            if config.is_leaf:
+                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor("black", "bright magenta"))
+            else:
+                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor((45, 125, 201), "bright cyan"))
         return ModuleColor(color_name=TextColor("yellow"))
 
 class LayerColorStrategy(ColorStrategy):
@@ -89,5 +93,5 @@ class ConstantColorStrategy(ColorStrategy):
         super().__init__()
         self.color = color
 
-    def get_color(self, module):
+    def get_color(self, module, config):
         return ModuleColor(color_name=TextColor(self.color))

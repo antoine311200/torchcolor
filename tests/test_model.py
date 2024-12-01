@@ -40,6 +40,7 @@ class DiverseModel(nn.Module):
 if __name__ == "__main__":
     # model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
     # model = SimpleModel()
+    print("Torch module loaded.\n")
     model = DiverseModel()
     printer = Printer(strategy="trainable")
     printer.print(model)
