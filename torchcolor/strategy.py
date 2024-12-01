@@ -81,8 +81,8 @@ class TrainableColorStrategy(ColorStrategy):
             if config.is_leaf:
                 return ModuleColor(color_name=TextColor("green"), color_descr=TextColor("black", "bright magenta"))
             else:
-                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor((45, 125, 201), "bright cyan"))
-        return ModuleColor(color_name=TextColor("yellow"))
+                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor((45, 125, 201)))
+        return ModuleColor(color_name=TextColor("yellow"), color_descr=TextColor((150, 100, 50)) if not config.is_root else None)
 
 class LayerColorStrategy(ColorStrategy):
     def get_color(self, module):

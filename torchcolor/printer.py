@@ -37,9 +37,9 @@ def summarize_repeated_modules(lines):
                 # Summarize the group
                 grouped_lines.pop()
                 grouped_lines.append(
-                    (f"{start_index}-{i-1}", f"{count + 1} x {mod_str}", previous_color, depth)
+                    (f"{start_index}-{i-1}", count+1, mod_str, previous_color, depth)
                 )
-            grouped_lines.append((key, mod_str, color, depth))
+            grouped_lines.append((key, None, mod_str, color, depth))
             count = 0
         previous_module_str = mod_str
         previous_color = color
@@ -50,7 +50,7 @@ def summarize_repeated_modules(lines):
         grouped_lines.pop()
         # Need to change to add count apart the description for better coloring
         grouped_lines.append(
-            (f"{start_index}-{len(lines)-1}", f"{count + 1} x {mod_str}", previous_color, depth)
+            (f"{start_index}-{len(lines)-1}", count + 1, mod_str, previous_color, depth)
         )
 
     return grouped_lines
@@ -58,6 +58,7 @@ def summarize_repeated_modules(lines):
 @dataclass
 class ModuleParam:
     is_leaf: bool
+    is_root: bool
 
 class Printer:
 
@@ -89,18 +90,23 @@ class Printer:
                 continue
 
             mod_str, module_depth = self.repr_module(module, indent=indent + 2)
-            color: ModuleColor = self.strategy.get_color(module, ModuleParam(is_leaf=module_depth == 0))
+            color: ModuleColor = self.strategy.get_color(module, ModuleParam(is_leaf=module_depth == 0, is_root=False))
             max_depth = max(module_depth+1, max_depth)
             child_lines.append((key, mod_str, color, module_depth))
 
         summarized_lines = summarize_repeated_modules(child_lines)
 
         child_lines_formatted = []
-        for key, mod_str, color, depth in summarized_lines:
+        for key, count, mod_str, color, depth in summarized_lines:
             colored_key = color.color_name.apply(f"({key}):") if color.color_name else f"({key}):"
             colored_descr = color.color_descr.apply(mod_str) if color.color_descr and depth == 0 else mod_str
 
-            child_lines_formatted.append(_addindent((f"[{str(depth)}] " if display_depth else "") + f"{colored_key} {colored_descr}", 2))
+            child_lines_formatted.append(_addindent(
+                (f"[{str(depth)}] " if display_depth else "") +
+                f"{colored_key} " +
+                (f"{count} x " if count else "") +
+                f"{colored_descr}"
+            , 2))
 
         lines = extra_lines + child_lines_formatted
         main_str = parent_module._get_name()
@@ -110,6 +116,6 @@ class Printer:
             else:
                 main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
-        color: ModuleColor = self.strategy.get_color(parent_module, ModuleParam(is_leaf=max_depth == 0))
+        color: ModuleColor = self.strategy.get_color(parent_module, ModuleParam(is_leaf=max_depth == 0, is_root=indent==2))
         main_str = color.color_descr.apply(main_str) if color.color_descr else main_str
         return main_str, max_depth
