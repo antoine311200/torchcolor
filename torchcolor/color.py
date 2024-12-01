@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, List
 
 foreground_colors = {
     "reset": 0,
@@ -88,6 +88,47 @@ class Color:
 
 reset_color = Color("reset")
 
+@dataclass
+class Palette:
+    colors: List[Color]
+
+    def __getitem__(self, index: int) -> Color:
+        """Get a color by index, cycling through the palette."""
+        return self.colors[index % len(self.colors)]
+
+def rainbow(text: str, palette: Palette, repeat: bool = False) -> str:
+    """Apply the rainbow effect to a text using a palette of colors.
+
+    Args:
+        palette (Palette): Palette of colors to use.
+        text (str): Text to colorize.
+        repeat (bool): Whether to repeat colors from the palette. Defaults to True.
+
+    Returns:
+        str: Colorized text with ANSI escape codes.
+    """
+    styled_text = []
+    n_colors = len(palette.colors)
+
+    if repeat:
+        # Cycle through colors for each character
+        for i, char in enumerate(text):
+            color = palette[i]  # Cycle through the palette
+            styled_text.append(f"{color.to_ansi()}{char}")
+    else:
+        # Divide text into contiguous segments based on the palette
+        segment_size = max(1, len(text) // n_colors)
+        for i, color in enumerate(palette.colors):
+            start = i * segment_size
+            end = start + segment_size if i < n_colors - 1 else len(text)
+            segment = text[start:end]
+            styled_text.append(f"{color.to_ansi()}{segment}")
+
+    return "".join(styled_text) + reset_color.to_ansi()
+
+
+
+
 
 @dataclass
 class TextColor:
@@ -97,8 +138,12 @@ class TextColor:
     def __init__(self, fg_color: Union[Color, str, tuple[int, int, int]] = None, bg_color: Union[Color, str, tuple[int, int, int]] = None):
         if not isinstance(fg_color, Color):
             self.fg_color = Color(fg_color)
+        else:
+            self.fg_color = fg_color
         if not isinstance(bg_color, Color):
             self.bg_color = Color(bg_color)
+        else:
+            self.bg_color = bg_color
 
     def apply(self, text: str) -> str:
         return reset_color.to_ansi() + self.fg_color.to_ansi() + self.bg_color.to_ansi(is_background=True) + text + reset_color.to_ansi()
