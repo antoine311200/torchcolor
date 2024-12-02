@@ -34,6 +34,7 @@ class TestPalette:
         print()
         for palette in Palette._registry.values():
             print(TextStyle(Gradient(palette, interpolate=True)).apply(text))
+            print(TextStyle(Gradient(palette, interpolate=True, reverse=True)).apply(text))
 
         long_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam consequat lectus eu quam iaculis, vel blandit ligula sagittis. Nam et tellus vel risus fringilla auctor ut vitae ligula. In vitae rutrum erat. Donec vel dolor faucibus ex mattis convallis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse in varius orci. Vestibulum ut lacus dignissim, tincidunt ex ut, fermentum ligula. Vivamus tempor metus magna. Maecenas faucibus dignissim tincidunt. Integer luctus sollicitudin eros non mollis."
         print()
@@ -46,7 +47,7 @@ class TestPalette:
         print("############### Foreground and background Gradients ###############")
         print("###################################################################")
         print()
-        
+
         for fg_palette in Palette._registry.values():
             for bg_palette in Palette._registry.values():
                 if fg_palette != bg_palette:

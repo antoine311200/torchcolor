@@ -9,6 +9,7 @@ GradientChunk = Type[tuple[int, int, Color]]
 @dataclass
 class Gradient:
     palette: Union[Palette, str]
+    reverse: bool = False
     interpolate: bool = True
     repeat: bool = False
     window_size: int = 1
@@ -39,6 +40,7 @@ class Gradient:
             colors = self.palette.generate_gradient(n=length)
         else:
             colors = self.palette.colors
+        if self.reverse: colors = colors[::-1]
 
         if self.repeat:
             # Cycle through colors for each character
