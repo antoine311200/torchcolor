@@ -1,2 +1,2 @@
-from .color import print_color, colorize
-from .printer import Printer
+from .color import Color
+from .print import print_color, print_more
