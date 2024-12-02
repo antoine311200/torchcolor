@@ -45,7 +45,7 @@ class Gradient:
         n_colors = len(self.palette.colors)
         length = len(text)
 
-        if self.interpolate:
+        if self.interpolate and not self.repeat:
             colors = self.palette.generate_gradient(n=length)
         else:
             colors = self.palette.colors
@@ -54,7 +54,7 @@ class Gradient:
         if self.repeat:
             # Cycle through colors for each character
             for i in range(length):
-                color = colors[i//self.window_size % len(colors)]  # Cycle through the palette
+                color = colors[(i//self.window_size) % len(colors)]  # Cycle through the palette
                 chunks.append((i, i+1, color))
         else:
             # Divide text into contiguous segments based on the palette

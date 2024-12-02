@@ -52,6 +52,7 @@ class SmallModel(nn.Module):
 from torchcolor.printer import Printer, ModuleStyle
 from torchcolor.strategy import ColorStrategy, ConstantColorStrategy
 from torchcolor.gradient import Gradient
+from torchcolor.color import Color
 from torchcolor.style import TextStyle, FunctionalStyle, LAYER_SPLITTER, DelimiterType, AnyType, KeyType
 
 class SmallStrategy(ColorStrategy):
@@ -73,7 +74,7 @@ class CustomStrategy(ColorStrategy):
             return ModuleStyle()
         elif all(not p.requires_grad for p in params):
             if config.is_leaf:
-                return ModuleStyle(name_style=TextStyle("red"), extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
+                return ModuleStyle(name_style=TextStyle(bg_style=Gradient("warm_sunset")), extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
                     KeyType: TextStyle((45, 124, 85)),
                     AnyType: TextStyle(underline=True),
                     DelimiterType: TextStyle(italic=True),
@@ -84,8 +85,8 @@ class CustomStrategy(ColorStrategy):
         elif all(p.requires_grad for p in params):
             if config.is_leaf:
                 return ModuleStyle(
-                    name_style=TextStyle("green"),
-                    layer_style=TextStyle("black", "bright magenta"),
+                    name_style=TextStyle(bg_style=Color("blue")),
+                    layer_style=TextStyle("bright magenta", double_underline=True),
                     extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
                         KeyType: TextStyle(Gradient("warm_sunset")),
                         AnyType: TextStyle(underline=True),
@@ -98,7 +99,7 @@ class CustomStrategy(ColorStrategy):
                     name_style=TextStyle("green"),
                     layer_style=TextStyle((45, 125, 201)),
                 )
-        return ModuleStyle(name_style=TextStyle("yellow"), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
+        return ModuleStyle(name_style=TextStyle(bg_style=Gradient("rainbow")), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
 
 
 if __name__ == "__main__":

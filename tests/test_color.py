@@ -42,6 +42,39 @@ class TestColor:
             "de",
             "fou furieux", TextStyle((255, 0, 0), darken=True),
         )
+        from torchcolor.color import Color
+        print()
+        little_style = TextStyle(fg_style=Gradient(Palette.get("rainbow")), bg_style=Color((75, 75, 75)), crossed=True)
+
+        print_more(
+            "Lorem ipsum ", TextStyle("red"),
+            "dolor sit amet", TextStyle(Gradient(Palette.get("warm_sunset")), underline=True),
+            ", consectetur adipiscing ",
+            "elit", TextStyle(bg_style="bright cyan", italic=True),
+            ". ",
+            "Nullam consequat", little_style,
+            " lectus ",
+            "eu quam iaculis", little_style,
+            ", ",
+            "vel blandit ligula sagittis.", TextStyle("green", darken=True),
+            sep=""
+        )
+
+
+        print()
+        color_red = Color("red")
+        color_rgb = Color((120, 240, 70))
+        # color_hex = Color("#F3AA5B")
+        color_hex = Color("#F3115B")
+
+
+        style1 = TextStyle(fg_style=color_red, bg_style=color_rgb, italic=True, double_underline=True)
+        style2 = TextStyle(fg_style=color_hex, bg_style="bright cyan", crossed=True)
+
+        text = "This text has a torchcolor styling!"
+        print(style1.apply(text))
+        print(style2.apply(text))
+        print()
 
 if __name__ == "__main__":
     TestColor().test_print_color()

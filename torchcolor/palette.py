@@ -26,6 +26,13 @@ class Palette:
         """Retrieve a palette by name."""
         return cls._registry.get(name)
 
+    @classmethod
+    def get(cls, name: str) -> "Palette":
+        """Retrieve a palette by name."""
+        if name in cls._registry:
+            return cls._registry.get(name)
+        raise NameError(f"Palette '{name}' does not exist")
+
     def __getitem__(self, index: int) -> Color:
         """Get a color by index, cycling through the palette."""
         return self.colors[index % len(self.colors)]
@@ -121,6 +128,7 @@ palette_retro_neon = Palette(
         Color("#FF00FF"),  # Magenta
         Color("#00FF00"),  # Lime
         Color("#FFFF00"),  # Yellow
+        Color("#000000"),  # Black
         Color("#00FFFF"),  # Cyan
         Color("#FF0000")   # Red
     ]

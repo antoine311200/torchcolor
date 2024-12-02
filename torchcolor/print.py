@@ -5,8 +5,9 @@ from .palette import Palette
 def print_color(text:str, text_color: str = None, bg_color: str = None) -> str:
     print(colorize(text, text_color=text_color, bg_color=bg_color))
 
-def print_more(*args: Union[str, TextStyle]):
+def print_more(*args: Union[str, TextStyle], **kwargs):
     results = []
+    sep = kwargs.get("sep", " ")
     buffer_string = ""
     for arg in args:
         if isinstance(arg, str):
@@ -18,4 +19,4 @@ def print_more(*args: Union[str, TextStyle]):
             buffer_string = ""
         else:
             raise TypeError(f"Argument {arg} is neither a string or a TextColor instance")
-    print(" ".join(results))
+    print(sep.join(results))

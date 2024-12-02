@@ -121,7 +121,7 @@ KeyType = Literal["key"]
 AnyType = Literal["any"]
 FunctionalType = Union[Type, DelimiterType, KeyType, AnyType]
 
-def infer_type(value: str):
+def infer_type(self, value: str):
     """Naive type inference that is sufficient for nn.Layer parsing"""
     if value.lower() == "true" or value.lower() == "false":
         return bool
@@ -146,7 +146,7 @@ class FunctionalStyle:
     and infer each match to a specific style.
     """
     styles: defaultdict[FunctionalType, TextStyle]
-    infer_func: function = infer_type
+    infer_func = infer_type
     splitter: str
 
     def __post_init__(self):
