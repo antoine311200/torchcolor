@@ -1,9 +1,20 @@
-# Torchcolor
+<p align="center">
+  <img src="./data/logo.svg" alt="Project Logo" width="450">
+</p>
+
+<p align="center">
+  <a href="https://img.shields.io/pypi/v/torchcolor">
+    <img src="https://img.shields.io/pypi/v/torchcolor.svg" alt="PyPI Version">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+  </a>
+</p>
+
 
 ## Description
 
-Torchcolor is a lightweight Python package for PyTorch that help to enhance readability of printing and logging information into the terminal.
-It is built around Pytorch Module so allow beautiful and readable model printing with  bits rgb colors, gradients, underline and more.
+Torchcolor is a lightweight Python package to enhance readability of printing and logging information into the terminal with Pytorch module coloring support.
 
 ## Usage
 
@@ -35,7 +46,7 @@ print(style2.apply(text))
 ```
 
 <div style="text-align: center;">
-  <img src="./data/color_style_example.jpg" alt="Description" style="width: 300px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/color_style_example.jpg" alt="Color style example" style="width: 300px;">
 </div>
 
 
@@ -63,7 +74,7 @@ print(style_repeat.apply(text))
 ```
 
 <div style="text-align: center;">
-  <img src="./data/custom_gradient_example.jpg" alt="Description" style="width: 500px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/custom_gradient_example.jpg" alt="Custom palette" style="width: 500px;">
 </div>
 
 ---
@@ -76,7 +87,7 @@ for palette in Palette._registry.values():
 ```
 
 <div style="text-align: center;">
-  <img src="./data/gradient_example.jpg" alt="Description" style="width: 500px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/gradient_example.jpg" alt="Example of gradients" style="width: 500px;">
 </div>
 
 ---
@@ -94,7 +105,7 @@ print(style.apply(text))
 ```
 
 <div style="text-align: center;">
-  <img src="./data/double_gradient_example.jpg" alt="Description" style="width: 500px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/double_gradient_example.jpg" alt="Gradient in foreground and background" style="width: 500px;">
 </div>
 
 #### Function `print_more`
@@ -122,7 +133,7 @@ print_more(
 ```
 
 <div style="text-align: center;">
-  <img src="./data/print_more_example.jpg" alt="Description" style="width: 900px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/print_more_example.jpg" alt="print_more function for similtaneous style printing" style="width: 900px;">
 </div>
 
 ---
@@ -199,14 +210,14 @@ printer.print(model)
 ```
 
 <div style="text-align: center;">
-  <img src="./data/trainable_strategy.jpg" alt="Description" style="width: 700px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/trainable_strategy.jpg" alt="Styling Strategy on trainability of parameters" style="width: 700px;">
 </div>
 
 
 Using `FunctionalStyle` it is possible to easily render something like 
 
 <div style="text-align: center;">
-  <img src="./data/complex_strategy.jpg" alt="Description" style="width: 700px;">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/complex_strategy.jpg" alt="Complex Styling Strategy for Pytorch model" style="width: 700px;">
 </div>
 
 <details>

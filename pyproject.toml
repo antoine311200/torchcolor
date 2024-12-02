@@ -9,10 +9,20 @@ description = "A lightweight Python package for PyTorch that enhances readabilit
 authors = [
     {name = "Antoine Debouchage", email = "antoine311200@gmail.com"}
 ]
-dependencies = ["torch"]
+readme = "README.md"
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+
+[project.urls]
+Homepage = "https://github.com/antoine311200/torchcolor"
+Issues = "https://github.com/antoine311200/torchcolor/issues"
+
+[tool.setuptools.packages]
+find = { include = ["torchcolor", "torchcolor.*"] }
+
+[project.optional-dependencies]
+torch = ["torch"]
