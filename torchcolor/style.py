@@ -6,6 +6,10 @@ import re
 from .color import Color, reset_color
 from .gradient import Gradient
 
+def clean_style(text: str) -> str:
+    ansi_escape_regex = r'\033\[[0-9;]*m'
+    return re.sub(ansi_escape_regex, '', text)
+
 @dataclass
 class TextStyle:
     # May add support for underline style later [escape code 58]
@@ -93,7 +97,8 @@ def colorize(
 
 DelimiterType = Literal["delimiter"]
 KeyType = Literal["key"]
-FunctionalType = Union[Type, DelimiterType, KeyType]
+AnyType = Literal["any"]
+FunctionalType = Union[Type, DelimiterType, KeyType, AnyType]
 
 def infer_type(value: str):
     if value.lower() == "true" or value.lower() == "false":
@@ -119,6 +124,8 @@ def infer_type(value: str):
 
     return KeyType
 
+LAYER_SPLITTER = r'\s*[=,]\s*'
+
 @dataclass
 class FunctionalStyle:
     styles: defaultdict[FunctionalType, TextStyle]
@@ -128,7 +135,7 @@ class FunctionalStyle:
         if not isinstance(self.styles, defaultdict):
             self.styles = defaultdict(TextStyle, self.styles)
 
-    def lex(self, text):
+    def apply(self, text):
         matches = re.split(f'({self.splitter})', text)
 
         result = []
@@ -142,7 +149,9 @@ class FunctionalStyle:
         for res, is_delim in result:
             if not is_delim: stylised_text += self.styles[DelimiterType].apply(res)
             else:
-                print(res, infer_type(res))
-                stylised_text += self.styles[infer_type(res)].apply(res)
+                found_type = infer_type(res)
+                if found_type not in self.styles:
+                    found_type = AnyType
+                stylised_text += self.styles[found_type].apply(res)
 
         return stylised_text

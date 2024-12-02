@@ -4,13 +4,13 @@ from typing import Union
 
 from torch.nn import Module
 
-from .style import TextStyle
+from .style import TextStyle, FunctionalStyle, LAYER_SPLITTER, KeyType, DelimiterType, AnyType
 
 @dataclass
 class ModuleStyle:
-    name_style: TextStyle = None
-    layer_style: TextStyle = None
-    extra_style: TextStyle = None
+    name_style: Union[TextStyle, FunctionalStyle] = None
+    layer_style: Union[TextStyle, FunctionalStyle] = None
+    extra_style: Union[TextStyle, FunctionalStyle] = None
 
 
 class ColorStrategy(ABC):
@@ -77,12 +77,32 @@ class TrainableColorStrategy(ColorStrategy):
         if not params:
             return ModuleStyle()
         elif all(not p.requires_grad for p in params):
-            return ModuleStyle(name_style=TextStyle("red"))
+            if config.is_leaf:
+                return ModuleStyle(name_style=TextStyle("red"), extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
+                    KeyType: TextStyle((45, 124, 85)),
+                    AnyType: TextStyle(underline=True),
+                    DelimiterType: TextStyle(italic=True),
+                    bool: TextStyle((25, 120, 230), italic=True)
+                }))
+            else:
+                return ModuleStyle(name_style=TextStyle("red"))
         elif all(p.requires_grad for p in params):
             if config.is_leaf:
-                return ModuleStyle(name_style=TextStyle("green"), layer_style=TextStyle("black", "bright magenta"))
+                return ModuleStyle(
+                    name_style=TextStyle("green"),
+                    layer_style=TextStyle("black", "bright magenta"),
+                    extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
+                        KeyType: TextStyle(Gradient("warm_sunset")),
+                        AnyType: TextStyle(underline=True),
+                        DelimiterType: TextStyle(italic=True),
+                        bool: TextStyle((180, 25, 120), italic=True)
+                    })
+                )
             else:
-                return ModuleStyle(name_style=TextStyle("green"), layer_style=TextStyle((45, 125, 201)))
+                return ModuleStyle(
+                    name_style=TextStyle("green"),
+                    layer_style=TextStyle((45, 125, 201)),
+                )
         return ModuleStyle(name_style=TextStyle("yellow"), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
 
 class LayerColorStrategy(ColorStrategy):

@@ -12,7 +12,7 @@ class TestFunctional:
                 DelimiterType: TextStyle(double_underline=True),
                 bool: TextStyle("blue", "bright red")
             })
-        print(style.lex("in_features=10, out_features=10, bias=True"))
+        print(style.apply("in_features=10, out_features=10, bias=True"))
 
 if __name__ == "__main__":
     TestFunctional().test_functional()
