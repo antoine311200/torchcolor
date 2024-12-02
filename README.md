@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./data/logo.svg" alt="Project Logo" width="450">
+  <img src="https://raw.githubusercontent.com/antoine311200/torchcolor/refs/heads/main/data/logo.svg" alt="Torchcolor Logo" width="450">
 </p>
 
 <p align="center">
