@@ -5,15 +5,22 @@ from typing import Union
 from torch.nn import Module
 
 from .style import TextStyle, FunctionalStyle, LAYER_SPLITTER, KeyType, DelimiterType, AnyType
+from .gradient import Gradient
 
 @dataclass
 class ModuleStyle:
+    """Dataclass for styling a module representative string
+
+    Each module is usually printed as (name): layer(extra_information)
+    As such, we provide a different style for each of these 3 blocks
+    """
     name_style: Union[TextStyle, FunctionalStyle] = None
     layer_style: Union[TextStyle, FunctionalStyle] = None
     extra_style: Union[TextStyle, FunctionalStyle] = None
 
 
 class ColorStrategy(ABC):
+    """Styling strategy that allocate the corresponding module style to a given module based on registered pattern"""
     _registry = {}
 
     @abstractmethod
@@ -69,48 +76,25 @@ class ColorStrategy(ABC):
         """Return a list of all available strategy keys."""
         return list(cls._registry.keys())
 
-
 @ColorStrategy.register("trainable")
-class TrainableColorStrategy(ColorStrategy):
+class TrainableStrategy(ColorStrategy):
     def get_style(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
         elif all(not p.requires_grad for p in params):
-            if config.is_leaf:
-                return ModuleStyle(name_style=TextStyle("red"), extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
-                    KeyType: TextStyle((45, 124, 85)),
-                    AnyType: TextStyle(underline=True),
-                    DelimiterType: TextStyle(italic=True),
-                    bool: TextStyle((25, 120, 230), italic=True)
-                }))
-            else:
-                return ModuleStyle(name_style=TextStyle("red"))
+            return ModuleStyle(name_style=TextStyle("red"))
         elif all(p.requires_grad for p in params):
-            if config.is_leaf:
-                return ModuleStyle(
-                    name_style=TextStyle("green"),
-                    layer_style=TextStyle("black", "bright magenta"),
-                    extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
-                        KeyType: TextStyle(Gradient("warm_sunset")),
-                        AnyType: TextStyle(underline=True),
-                        DelimiterType: TextStyle(italic=True),
-                        bool: TextStyle((180, 25, 120), italic=True)
-                    })
-                )
-            else:
-                return ModuleStyle(
-                    name_style=TextStyle("green"),
-                    layer_style=TextStyle((45, 125, 201)),
-                )
-        return ModuleStyle(name_style=TextStyle("yellow"), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
+            return ModuleStyle(name_style=TextStyle("green"))
+        return ModuleStyle(name_style=TextStyle("yellow")if not config.is_root else None)
+
+
 
 class LayerColorStrategy(ColorStrategy):
     def get_style(self, module):
         pass
 
 
-from .gradient import Gradient
 
 class ConstantColorStrategy(ColorStrategy):
     def __init__(self, color: Union[str, tuple[int]] = ""):

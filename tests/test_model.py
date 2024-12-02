@@ -1,6 +1,3 @@
-from torchcolor.printer import Printer
-from torchcolor.strategy import ConstantColorStrategy
-
 from transformers import AutoModelForSequenceClassification
 
 import torch
@@ -23,16 +20,20 @@ class DiverseModel(nn.Module):
         self.trainable_more_sequential = nn.ModuleList(
             [nn.Linear(3, 3) for _ in range(4)]
         )
+
         self.trainable_sequential = nn.ModuleList(
             [nn.Linear(5, 10)] + [nn.Linear(10, 10) for _ in range(10)] +
             [nn.Sequential(nn.Linear(10, 10), nn.Linear(10, 10)) for _ in range(2)]
         )
+        for param in self.trainable_sequential[4].parameters():
+            param.requires_grad = False
+        self.trainable_sequential[11][0].weight.requires_grad = False
+        self.trainable_sequential[12][0].weight.requires_grad = False
+
         self.non_trainable_layer = nn.Linear(10, 10)
         for param in self.non_trainable_layer.parameters():
             param.requires_grad = False
 
-        for param in self.trainable_sequential[4].parameters():
-            param.requires_grad = False
         self.mixed_layer = nn.Sequential(
             nn.Linear(10, 10),  # Trainable
             nn.Linear(10, 10)  # Make this non-trainable
@@ -48,10 +49,11 @@ class SmallModel(nn.Module):
         )
         for param in self.sequential[2].parameters(): param.requires_grad = False
 
+from torchcolor.printer import Printer, ModuleStyle
+from torchcolor.strategy import ColorStrategy, ConstantColorStrategy
+from torchcolor.gradient import Gradient
+from torchcolor.style import TextStyle, FunctionalStyle, LAYER_SPLITTER, DelimiterType, AnyType, KeyType
 
-from torchcolor.strategy import ColorStrategy
-from torchcolor.printer import ModuleStyle
-from torchcolor.style import TextStyle
 class SmallStrategy(ColorStrategy):
     def get_style(self, module, config):
         params = list(module.parameters(recurse=True))
@@ -63,13 +65,53 @@ class SmallStrategy(ColorStrategy):
             return ModuleStyle(extra_style=TextStyle("green"))
         return ModuleStyle(name_style=TextStyle("yellow"))
 
+@ColorStrategy.register("custom")
+class CustomStrategy(ColorStrategy):
+    def get_style(self, module, config):
+        params = list(module.parameters(recurse=True))
+        if not params:
+            return ModuleStyle()
+        elif all(not p.requires_grad for p in params):
+            if config.is_leaf:
+                return ModuleStyle(name_style=TextStyle("red"), extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
+                    KeyType: TextStyle((45, 124, 85)),
+                    AnyType: TextStyle(underline=True),
+                    DelimiterType: TextStyle(italic=True),
+                    bool: TextStyle((25, 120, 230), italic=True)
+                }))
+            else:
+                return ModuleStyle(name_style=TextStyle("red"))
+        elif all(p.requires_grad for p in params):
+            if config.is_leaf:
+                return ModuleStyle(
+                    name_style=TextStyle("green"),
+                    layer_style=TextStyle("black", "bright magenta"),
+                    extra_style=FunctionalStyle(splitter=LAYER_SPLITTER, styles={
+                        KeyType: TextStyle(Gradient("warm_sunset")),
+                        AnyType: TextStyle(underline=True),
+                        DelimiterType: TextStyle(italic=True),
+                        bool: TextStyle((180, 25, 120), italic=True)
+                    })
+                )
+            else:
+                return ModuleStyle(
+                    name_style=TextStyle("green"),
+                    layer_style=TextStyle((45, 125, 201)),
+                )
+        return ModuleStyle(name_style=TextStyle("yellow"), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
+
+
 if __name__ == "__main__":
     # model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
     # model = SimpleModel()
+
     print("Torch module loaded.\n")
     model = DiverseModel()
-    printer = Printer(strategy="trainable")
-    printer.print(model, display_depth=True)
+    printer = Printer(strategy="custom")
+    printer.print(model)
 
     printer.set_strategy(ConstantColorStrategy((40, 80, 20)))
+    printer.print(model)
+
+    printer.set_strategy("trainable")
     printer.print(model)
