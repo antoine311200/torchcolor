@@ -8,6 +8,7 @@ GradientChunk = Type[tuple[int, int, Color]]
 
 @dataclass
 class Gradient:
+    """Dataclass handling Gradient style from a given color palette and different display properties."""
     palette: Union[Palette, str]
     reverse: bool = False
     interpolate: bool = True
@@ -17,7 +18,15 @@ class Gradient:
     def __post_init__(self):
         self.palette = self._ensure_palette(self.palette)
 
-    def _ensure_palette(self, palette: Union[Palette, str]):
+    def _ensure_palette(self, palette: Union[Palette, str]) -> Palette:
+        """Ensure that the palette property is of type Palette otherwise get the palette by its name if it exists.
+
+        Args:
+            palette (Union[Palette, str]): A color palette or the name of a registered palette
+
+        Returns:
+            Palette: A color palette
+        """
         if isinstance(palette, Palette): return palette
         return Palette.get_palette(palette)
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Union, List, ClassVar
 
+# Preset ANSI Escape code for foreground and background colors
 foreground_colors = {
     "reset": 0,
     "black": 30,
@@ -46,6 +47,7 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 def is_rgb(color):
+    """Check whether a color is a valid rgb tuple"""
     return (
         len(color) == 3 and
         any(
@@ -56,6 +58,7 @@ def is_rgb(color):
 
 @dataclass
 class Color:
+    """Color dataclass with rgb and hexadecimal convertion as well as ANSI convertion for terminal printing"""
     value: Union[str, tuple[int, int, int]]
 
     def to_rgb(self) -> tuple[int, int, int]:
@@ -74,11 +77,8 @@ class Color:
         else:
             raise TypeError("Unsupported color format.")
 
-    def to_hex(self) -> str:
-        if isinstance(self.value, str):
-            pass
-
     def to_ansi(self, is_background: bool = False) -> str:
+        """Convert a color to ANSI Escape Code based on whether it is a preset or rgb/hex, background or foreground color."""
         if self.value is None:
             return ""
         elif isinstance(self.value, tuple):
@@ -94,4 +94,5 @@ class Color:
         else:
             raise TypeError("Unsupported color format.")
 
+# Reset color to remove any style for the further characters
 reset_color = Color("reset")

@@ -7,6 +7,7 @@ from .color import Color, reset_color, hex_to_rgb
 
 @dataclass
 class Palette:
+    """Palette dataclass that stores a palette name and a list of colors"""
     _registry: ClassVar[Dict[str, "Palette"]] = {}
 
     name: str
@@ -57,6 +58,9 @@ class Palette:
         gradient_colors.append(self.colors[-1])
 
         return gradient_colors
+
+
+# List of preset palettes
 
 palette_warm_sunset = Palette(
     "warm_sunset", [
