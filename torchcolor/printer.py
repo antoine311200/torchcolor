@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from .strategy import ColorStrategy, ModuleColor
+from .strategy import ColorStrategy, ModuleStyle
 from .color import reset_color
 
 # Function for adding indent from the pytorch codebase in /torch/nn/modules/module.py
@@ -90,7 +90,7 @@ class Printer:
                 continue
 
             mod_str, module_depth = self.repr_module(module, indent=indent + 2)
-            color: ModuleColor = self.strategy.get_color(module, ModuleParam(is_leaf=module_depth == 0, is_root=False))
+            color: ModuleStyle = self.strategy.get_style(module, ModuleParam(is_leaf=module_depth == 0, is_root=False))
             max_depth = max(module_depth+1, max_depth)
             child_lines.append((key, mod_str, color, module_depth))
 
@@ -98,8 +98,8 @@ class Printer:
 
         child_lines_formatted = []
         for key, count, mod_str, color, depth in summarized_lines:
-            colored_key = color.color_name.apply(f"({key}):") if color.color_name else f"({key}):"
-            colored_descr = color.color_descr.apply(mod_str) if color.color_descr and depth == 0 else mod_str
+            colored_key = color.name_style.apply(f"({key}):") if color.name_style else f"({key}):"
+            colored_descr = color.layer_style.apply(mod_str) if color.layer_style and depth == 0 else mod_str
 
             child_lines_formatted.append(_addindent(
                 (f"[{str(depth)}] " if display_depth else "") +
@@ -116,6 +116,6 @@ class Printer:
             else:
                 main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
-        color: ModuleColor = self.strategy.get_color(parent_module, ModuleParam(is_leaf=max_depth == 0, is_root=indent==2))
-        main_str = color.color_descr.apply(main_str) if color.color_descr else main_str
+        color: ModuleStyle = self.strategy.get_style(parent_module, ModuleParam(is_leaf=max_depth == 0, is_root=indent==2))
+        main_str = color.layer_style.apply(main_str) if color.layer_style else main_str
         return main_str, max_depth

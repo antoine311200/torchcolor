@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Union
+from collections import defaultdict
+from typing import Union, Type, Literal
+import re
 
 from .color import Color, reset_color
 from .gradient import Gradient
@@ -86,3 +88,61 @@ def colorize(
     background_color = bg_color if isinstance(bg_color, Color) else Color(bg_color)
 
     return TextStyle(foreground_color, background_color).apply(text)
+
+
+
+DelimiterType = Literal["delimiter"]
+KeyType = Literal["key"]
+FunctionalType = Union[Type, DelimiterType, KeyType]
+
+def infer_type(value: str):
+    if value.lower() == "true" or value.lower() == "false":
+        return bool
+
+    try:
+        int(value)
+        return int
+    except ValueError:
+        pass
+
+    try:
+        float(value)
+        return float
+    except ValueError:
+        pass
+
+    try:
+        if value[0] == "#":
+            return str
+    except:
+        pass
+
+    return KeyType
+
+@dataclass
+class FunctionalStyle:
+    styles: defaultdict[FunctionalType, TextStyle]
+    splitter: str
+
+    def __post_init__(self):
+        if not isinstance(self.styles, defaultdict):
+            self.styles = defaultdict(TextStyle, self.styles)
+
+    def lex(self, text):
+        matches = re.split(f'({self.splitter})', text)
+
+        result = []
+        for match in matches:
+            if match == "" or match.isspace():
+                continue
+            if re.fullmatch(self.splitter, match): result.append((match, False))
+            else: result.append((match, True))
+
+        stylised_text = ""
+        for res, is_delim in result:
+            if not is_delim: stylised_text += self.styles[DelimiterType].apply(res)
+            else:
+                print(res, infer_type(res))
+                stylised_text += self.styles[infer_type(res)].apply(res)
+
+        return stylised_text

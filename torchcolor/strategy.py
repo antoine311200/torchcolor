@@ -4,19 +4,20 @@ from typing import Union
 
 from torch.nn import Module
 
-from .color import TextColor, Color
+from .style import TextStyle
 
 @dataclass
-class ModuleColor:
-    color_name: TextColor = None
-    color_descr: TextColor = None
+class ModuleStyle:
+    name_style: TextStyle = None
+    layer_style: TextStyle = None
+    extra_style: TextStyle = None
 
 
 class ColorStrategy(ABC):
     _registry = {}
 
     @abstractmethod
-    def get_color(self, module: Module, params: dict) -> ModuleColor:
+    def get_style(self, module: Module, params: dict) -> ModuleStyle:
         """Return the appropriate color for the module based on some properties given by the strategy
 
         Args:
@@ -71,27 +72,30 @@ class ColorStrategy(ABC):
 
 @ColorStrategy.register("trainable")
 class TrainableColorStrategy(ColorStrategy):
-    def get_color(self, module, config):
+    def get_style(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
-            return ModuleColor()
+            return ModuleStyle()
         elif all(not p.requires_grad for p in params):
-            return ModuleColor(color_name=TextColor("red"))
+            return ModuleStyle(name_style=TextStyle("red"))
         elif all(p.requires_grad for p in params):
             if config.is_leaf:
-                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor("black", "bright magenta"))
+                return ModuleStyle(name_style=TextStyle("green"), layer_style=TextStyle("black", "bright magenta"))
             else:
-                return ModuleColor(color_name=TextColor("green"), color_descr=TextColor((45, 125, 201)))
-        return ModuleColor(color_name=TextColor("yellow"), color_descr=TextColor((150, 100, 50)) if not config.is_root else None)
+                return ModuleStyle(name_style=TextStyle("green"), layer_style=TextStyle((45, 125, 201)))
+        return ModuleStyle(name_style=TextStyle("yellow"), layer_style=TextStyle((150, 100, 50)) if not config.is_root else None)
 
 class LayerColorStrategy(ColorStrategy):
-    def get_color(self, module):
+    def get_style(self, module):
         pass
+
+
+from .gradient import Gradient
 
 class ConstantColorStrategy(ColorStrategy):
     def __init__(self, color: Union[str, tuple[int]] = ""):
         super().__init__()
         self.color = color
 
-    def get_color(self, module, config):
-        return ModuleColor(color_name=TextColor(self.color))
+    def get_style(self, module, config):
+        return ModuleStyle(name_style=TextStyle(self.color, Gradient("warm_sunset"), double_underline=True, italic=True))

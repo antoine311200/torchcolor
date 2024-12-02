@@ -54,7 +54,5 @@ class Gradient:
                 start = i * segment_size
                 end = start + segment_size if i < n_colors - 1 or self.interpolate else length
                 chunks.append((start, end, color))
-                # segment = text[start:end]
-                # styled_text.append(f"{color.to_ansi()}{segment}")
 
-        return chunks#"".join(styled_text) + reset_color.to_ansi()
+        return chunks
