@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, ClassVar, Dict
+from typing import List, ClassVar, Dict, Union
 
 from .color import Color, reset_color, hex_to_rgb
 
@@ -56,42 +56,6 @@ class Palette:
         gradient_colors.append(self.colors[-1])
 
         return gradient_colors
-
-
-def rainbow(text: str, palette: Palette, gradient: bool = False, repeat: bool = False, window_size: int = 1) -> str:
-    """Apply the rainbow effect to a text using a palette of colors.
-
-    Args:
-        palette (Palette): Palette of colors to use.
-        text (str): Text to colorize.
-        repeat (bool): Whether to repeat colors from the palette. Defaults to True.
-
-    Returns:
-        str: Colorized text with ANSI escape codes.
-    """
-    styled_text = []
-    n_colors = len(palette.colors)
-
-    if gradient:
-        colors = palette.generate_gradient(n=len(text))
-    else:
-        colors = palette.colors
-
-    if repeat:
-        # Cycle through colors for each character
-        for i, char in enumerate(text):
-            color = colors[i//window_size % len(colors)]  # Cycle through the palette
-            styled_text.append(f"{color.to_ansi()}{char}")
-    else:
-        # Divide text into contiguous segments based on the palette
-        segment_size = max(1, len(text) // n_colors) if not gradient else 1
-        for i, color in enumerate(colors):
-            start = i * segment_size
-            end = start + segment_size if i < n_colors - 1 or gradient else len(text)
-            segment = text[start:end]
-            styled_text.append(f"{color.to_ansi()}{segment}")
-
-    return "".join(styled_text) + reset_color.to_ansi()
 
 palette_warm_sunset = Palette(
     "warm_sunset", [
