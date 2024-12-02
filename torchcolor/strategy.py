@@ -78,6 +78,7 @@ class ColorStrategy(ABC):
 
 @ColorStrategy.register("trainable")
 class TrainableStrategy(ColorStrategy):
+    """Styling strategy that handles trainable, non-trainable and mixed trainable layers/modules"""
     def get_style(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:

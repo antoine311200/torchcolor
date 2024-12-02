@@ -38,13 +38,14 @@ class Palette:
         if n <= total_palette_colors:
             return [self.colors[i % total_palette_colors] for i in range(n)]
 
-        # Calculate how many colors should be generated between each adjacent palette color
+        # Number of interpolated colors between two anchor colors
         steps = n // (total_palette_colors - 1)
 
         # Interpolate between consecutive colors in the palette
+        # Gradient not working for non RGB or HEX color
         for i in range(total_palette_colors - 1):
-            color1_rgb = hex_to_rgb(self.colors[i].value)
-            color2_rgb = hex_to_rgb(self.colors[i + 1].value)
+            color1_rgb = hex_to_rgb(self.colors[i].value) if isinstance(self.colors[i].value, str) else self.colors[i].value
+            color2_rgb = hex_to_rgb(self.colors[i + 1].value) if isinstance(self.colors[i + 1].value, str) else self.colors[i + 1].value
 
             for step in range(steps):
                 r = int(color1_rgb[0] + (color2_rgb[0] - color1_rgb[0]) * step / steps)
