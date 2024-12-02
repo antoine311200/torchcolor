@@ -1,1 +1,1 @@
-from .color import print_color, colorize, Palette, Color, rainbow
+from .color import print_color, colorize, Color

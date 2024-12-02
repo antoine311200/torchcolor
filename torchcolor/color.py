@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union, List
+from typing import Union, List, ClassVar
 
 foreground_colors = {
     "reset": 0,
@@ -45,6 +45,15 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip("#").lower()
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+def is_rgb(color):
+    return (
+        len(color) == 3 and
+        any(
+            int(component) != component or
+            component > 255 or component < 0
+        for component in color)
+    )
+
 @dataclass
 class Color:
     value: Union[str, tuple[int, int, int]]
@@ -53,7 +62,7 @@ class Color:
         if isinstance(self.value, tuple):
             if len(self.value) != 3:
                 raise ValueError("RGB color must have three components (R, G, B).")
-            if any(int(component) != component or component > 255 or component < 0 for component in self.value):
+            if not is_rgb(self.value):
                 raise ValueError("RGB components must be integers in the range [0, 255]")
             return self.value
         elif isinstance(self.value, str):
@@ -64,7 +73,6 @@ class Color:
             return hex_to_rgb(self.value)
         else:
             raise TypeError("Unsupported color format.")
-
 
     def to_hex(self) -> str:
         if isinstance(self.value, str):
@@ -88,65 +96,29 @@ class Color:
 
 reset_color = Color("reset")
 
-@dataclass
-class Palette:
-    colors: List[Color]
-
-    def __getitem__(self, index: int) -> Color:
-        """Get a color by index, cycling through the palette."""
-        return self.colors[index % len(self.colors)]
-
-def rainbow(text: str, palette: Palette, repeat: bool = False) -> str:
-    """Apply the rainbow effect to a text using a palette of colors.
-
-    Args:
-        palette (Palette): Palette of colors to use.
-        text (str): Text to colorize.
-        repeat (bool): Whether to repeat colors from the palette. Defaults to True.
-
-    Returns:
-        str: Colorized text with ANSI escape codes.
-    """
-    styled_text = []
-    n_colors = len(palette.colors)
-
-    if repeat:
-        # Cycle through colors for each character
-        for i, char in enumerate(text):
-            color = palette[i]  # Cycle through the palette
-            styled_text.append(f"{color.to_ansi()}{char}")
-    else:
-        # Divide text into contiguous segments based on the palette
-        segment_size = max(1, len(text) // n_colors)
-        for i, color in enumerate(palette.colors):
-            start = i * segment_size
-            end = start + segment_size if i < n_colors - 1 else len(text)
-            segment = text[start:end]
-            styled_text.append(f"{color.to_ansi()}{segment}")
-
-    return "".join(styled_text) + reset_color.to_ansi()
-
 
 
 
 
 @dataclass
 class TextColor:
-    fg_color: Color = None
-    bg_color: Color = None
+    fg_color: Union[Color, str, tuple[int, int, int]] = None
+    bg_color: Union[Color, str, tuple[int, int, int]] = None
 
-    def __init__(self, fg_color: Union[Color, str, tuple[int, int, int]] = None, bg_color: Union[Color, str, tuple[int, int, int]] = None):
-        if not isinstance(fg_color, Color):
-            self.fg_color = Color(fg_color)
-        else:
-            self.fg_color = fg_color
-        if not isinstance(bg_color, Color):
-            self.bg_color = Color(bg_color)
-        else:
-            self.bg_color = bg_color
+    def __post_init__(self):
+        self.fg_color = self._ensure_color(self.fg_color)
+        self.bg_color = self._ensure_color(self.bg_color)
+
+    @staticmethod
+    def _ensure_color(value: Union[Color, str, tuple[int, int, int]]) -> Color:
+        if isinstance(value, Color):
+            return value
+        return Color(value)
 
     def apply(self, text: str) -> str:
         return reset_color.to_ansi() + self.fg_color.to_ansi() + self.bg_color.to_ansi(is_background=True) + text + reset_color.to_ansi()
+
+
 
 def colorize(
     text: str,
