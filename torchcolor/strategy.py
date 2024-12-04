@@ -114,7 +114,6 @@ class GradientChangeStrategy(ColorStrategy):
 
     def get_style(self, name, module, config):
         params = list(module.parameters(recurse=True))
-        print(name, config.is_leaf)
         if not params:
             return ModuleStyle()
         elif all(not p.requires_grad for p in params):
@@ -124,10 +123,8 @@ class GradientChangeStrategy(ColorStrategy):
             else: relative_change = 0
 
             if relative_change > 0.75:
-                # print(">>>")
                 return ModuleStyle(name_style=TextStyle("red"))
             elif relative_change > 0.5:
-                # print("<<<")
                 return ModuleStyle(name_style=TextStyle("yellow"))
             # print("===")
             return ModuleStyle(name_style=TextStyle("green"))

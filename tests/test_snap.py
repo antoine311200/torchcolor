@@ -33,10 +33,8 @@ if __name__ == "__main__":
 
     simulate_training_step(model)
     snapshot.capture("snap1")
-    # print(snapshot.states)
 
     simulate_training_step(model)
     snapshot.capture("snap2")
-    # print(snapshot.states)
 
     printer.print(model, snapshot=snapshot)

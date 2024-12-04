@@ -77,7 +77,6 @@ class Printer:
     def repr(self, module, display_depth=False, indent=2, **kwargs):
         self.node_params = {}
         self.__explore__(module)
-        # print(self.node_params)
 
         for name, submodule in module.named_modules():
             self.strategy.precompute(
@@ -86,7 +85,6 @@ class Printer:
                 config=self.node_params[name],
                 **kwargs
             )
-        print("GOGOGO")
         return self.__repr_module__(module, display_depth=display_depth, indent=indent)
 
     def __explore__(self, parent_module, name=""):
@@ -107,7 +105,6 @@ class Printer:
         """
         Recursively print the module with the chosen color strategy.
         """
-        print("Name:", name)
         extra_lines = []
         extra_repr = parent_module.extra_repr()
         if extra_repr:
@@ -121,7 +118,7 @@ class Printer:
             mod_str = self.__repr_module__(module, indent=indent + 2, display_depth=display_depth, name=module_name)
             style = self.strategy.get_style(module_name, module, self.node_params[module_name])
             child_lines.append((key, mod_str, style, self.node_params[module_name].depth))
-        # print(child_lines)
+
         summarized_lines = summarize_repeated_modules(child_lines)
 
         child_lines_formatted = []
@@ -148,5 +145,4 @@ class Printer:
                 main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
         main_str = style.layer_style.apply(main_str) if style.layer_style else main_str
-        # print(main_str)
         return main_str
