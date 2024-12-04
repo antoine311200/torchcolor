@@ -58,6 +58,7 @@ def summarize_repeated_modules(lines):
 class ModuleParam:
     is_leaf: bool
     is_root: bool
+    depth: int
 
 class Printer:
 
@@ -70,30 +71,57 @@ class Printer:
             strategy = ColorStrategy.get_strategy(strategy, *args, **kwargs)
         self.strategy = strategy
 
-    def print(self, module, display_depth: bool = False, display_legend: bool = False):
-        print(self.repr_module(module, display_depth=display_depth)[0])
+    def print(self, module, display_depth: bool = False, display_legend: bool = False, **kwargs):
+        print(self.repr(module, display_depth=display_depth, **kwargs))
 
-    def repr_module(self, parent_module, display_depth=False, indent=2):
+    def repr(self, module, display_depth=False, indent=2, **kwargs):
+        self.node_params = {}
+        self.__explore__(module)
+        # print(self.node_params)
+
+        for name, submodule in module.named_modules():
+            self.strategy.precompute(
+                name=name,
+                module=submodule,
+                config=self.node_params[name],
+                **kwargs
+            )
+        print("GOGOGO")
+        return self.__repr_module__(module, display_depth=display_depth, indent=indent)
+
+    def __explore__(self, parent_module, name=""):
+        depth = 0
+        for module_name, module in parent_module._modules.items():
+            module_param = self.__explore__(module, name=(name+'.' if name else "")+module_name)
+            depth = max(module_param.depth+1, depth)
+
+        param = ModuleParam(
+            is_leaf=(depth==0),
+            is_root=(name==""),
+            depth=depth
+        )
+        self.node_params[name] = param
+        return param
+
+    def __repr_module__(self, parent_module, display_depth=False, indent=2, name=""):
         """
         Recursively print the module with the chosen color strategy.
         """
+        print("Name:", name)
         extra_lines = []
         extra_repr = parent_module.extra_repr()
         if extra_repr:
             extra_lines = extra_repr.split("\n")
 
-        max_depth = 0
         child_lines = []
         for key, module in parent_module._modules.items():
             if module is None:
                 continue
-
-            mod_str, module_depth = self.repr_module(module, indent=indent + 2, display_depth=display_depth)
-            style: ModuleStyle = self.strategy.get_style(module, ModuleParam(is_leaf=module_depth == 0, is_root=False))
-            max_depth = max(module_depth+1, max_depth)
-            # print(key, mod_str, style, module_depth)
-            child_lines.append((key, mod_str, style, module_depth))
-
+            module_name = (name+'.' if name else '')+key
+            mod_str = self.__repr_module__(module, indent=indent + 2, display_depth=display_depth, name=module_name)
+            style = self.strategy.get_style(module_name, module, self.node_params[module_name])
+            child_lines.append((key, mod_str, style, self.node_params[module_name].depth))
+        # print(child_lines)
         summarized_lines = summarize_repeated_modules(child_lines)
 
         child_lines_formatted = []
@@ -109,15 +137,16 @@ class Printer:
             , 2))
 
         lines = extra_lines + child_lines_formatted
-        style: ModuleStyle = self.strategy.get_style(parent_module, ModuleParam(is_leaf=max_depth == 0, is_root=indent==2))
+        style = self.strategy.get_style(name, parent_module, self.node_params[name])
         main_str = parent_module._get_name()
 
         if lines:
             if len(extra_lines) == 1 and not child_lines_formatted:
-                stylised_extra_line = style.extra_style.apply(extra_lines[0]) if style.extra_style else extra_lines[0]
+                stylised_extra_line = style.extra_style.apply(extra_lines[0]) if style and style.extra_style else extra_lines[0]
                 main_str += reset_color.to_ansi() + "(" + stylised_extra_line + reset_color.to_ansi() + ")"
             else:
                 main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
         main_str = style.layer_style.apply(main_str) if style.layer_style else main_str
-        return main_str, max_depth
+        # print(main_str)
+        return main_str

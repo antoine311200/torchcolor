@@ -23,8 +23,12 @@ class ColorStrategy(ABC):
     """Styling strategy that allocate the corresponding module style to a given module based on registered pattern"""
     _registry = {}
 
+    def precompute(self, module: Module, config: dict, *args, **kwargs):
+        # Cannot be abstracted otherwise custom strategy needs to implement it
+        pass
+
     @abstractmethod
-    def get_style(self, module: Module, params: dict) -> ModuleStyle:
+    def get_style(self, name: str, module: Module, config: dict, *args, **kwargs) -> ModuleStyle:
         """Return the appropriate color for the module based on some properties given by the strategy
 
         Args:
@@ -76,10 +80,13 @@ class ColorStrategy(ABC):
         """Return a list of all available strategy keys."""
         return list(cls._registry.keys())
 
+
+
+
 @ColorStrategy.register("trainable")
 class TrainableStrategy(ColorStrategy):
     """Styling strategy that handles trainable, non-trainable and mixed trainable layers/modules"""
-    def get_style(self, module, config):
+    def get_style(self, name, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
@@ -88,6 +95,44 @@ class TrainableStrategy(ColorStrategy):
         elif all(p.requires_grad for p in params):
             return ModuleStyle(name_style=TextStyle("green"))
         return ModuleStyle(name_style=TextStyle("yellow")if not config.is_root else None)
+
+
+@ColorStrategy.register("gradient")
+class GradientChangeStrategy(ColorStrategy):
+
+    def __init__(self):
+        self.max_change = float("-inf")
+        self.changes = {}
+
+    def precompute(self, name, module, config, snapshot):
+        if config.is_leaf and len(snapshot.states[name]) >= 2:
+            state1 = snapshot.retro(name, index=1)
+            state2 = snapshot.retro(name, index=2)
+
+            self.changes[name] = abs(state2 - state1)
+            self.max_change = max(self.max_change, self.changes[name])
+
+    def get_style(self, name, module, config):
+        params = list(module.parameters(recurse=True))
+        print(name, config.is_leaf)
+        if not params:
+            return ModuleStyle()
+        elif all(not p.requires_grad for p in params):
+            return ModuleStyle(name_style=TextStyle(underline=True))
+        elif name in self.changes and config.is_leaf:
+            if self.max_change > 0: relative_change = self.changes[name] / self.max_change
+            else: relative_change = 0
+
+            if relative_change > 0.75:
+                # print(">>>")
+                return ModuleStyle(name_style=TextStyle("red"))
+            elif relative_change > 0.5:
+                # print("<<<")
+                return ModuleStyle(name_style=TextStyle("yellow"))
+            # print("===")
+            return ModuleStyle(name_style=TextStyle("green"))
+        # else:
+        return ModuleStyle(name_style=TextStyle("blue"))
 
 
 
@@ -102,5 +147,5 @@ class ConstantColorStrategy(ColorStrategy):
         super().__init__()
         self.color = color
 
-    def get_style(self, module, config):
+    def get_style(self, name, module, config):
         return ModuleStyle(name_style=TextStyle(self.color, Gradient("warm_sunset"), double_underline=True, italic=True))

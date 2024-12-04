@@ -68,7 +68,7 @@ class SmallStrategy(ColorStrategy):
 
 @ColorStrategy.register("custom")
 class CustomStrategy(ColorStrategy):
-    def get_style(self, module, config):
+    def get_style(self, name, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
