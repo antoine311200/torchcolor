@@ -37,4 +37,4 @@ if __name__ == "__main__":
     simulate_training_step(model)
     snapshot.capture("snap2")
 
-    printer.print(model, snapshot=snapshot)
+    printer.print(model, snapshot=snapshot, legend=True)

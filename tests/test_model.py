@@ -56,7 +56,7 @@ from torchcolor.color import Color
 from torchcolor.style import TextStyle, FunctionalStyle, LAYER_SPLITTER, DelimiterType, AnyType, KeyType
 
 class SmallStrategy(ColorStrategy):
-    def get_style(self, module, config):
+    def process(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
@@ -68,7 +68,7 @@ class SmallStrategy(ColorStrategy):
 
 @ColorStrategy.register("custom")
 class CustomStrategy(ColorStrategy):
-    def get_style(self, name, module, config):
+    def process(self, name, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
@@ -115,4 +115,4 @@ if __name__ == "__main__":
     printer.print(model)
 
     printer.set_strategy("trainable")
-    printer.print(model)
+    printer.print(model, legend=True)

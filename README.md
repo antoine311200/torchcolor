@@ -190,7 +190,7 @@ It is then possible to create a `Strategy` that can highlight trainable and non-
 @ColorStrategy.register("trainable")
 class TrainableStrategy(ColorStrategy):
     """Styling strategy that handles trainable, non-trainable and mixed trainable layers/modules"""
-    def get_style(self, module, config):
+    def process(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
@@ -225,7 +225,7 @@ Using `FunctionalStyle` it is possible to easily render something like
 
 ```python
 class CustomStrategy(ColorStrategy):
-    def get_style(self, module, config):
+    def process(self, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()

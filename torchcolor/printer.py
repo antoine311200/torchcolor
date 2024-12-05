@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from typing import Union
 from copy import deepcopy
 
-from .strategy import ColorStrategy, ModuleStyle
+from .strategy import ColorStrategy, ModuleStyle, RegisteredStyle
 from .color import reset_color
-from .style import clean_style
+from .style import clean_style, TextStyle
 
 # Function for adding indent from the pytorch codebase in /torch/nn/modules/module.py
 def _addindent(s_, numSpaces):
@@ -71,7 +71,8 @@ class Printer:
             strategy = ColorStrategy.get_strategy(strategy, *args, **kwargs)
         self.strategy = strategy
 
-    def print(self, module, display_depth: bool = False, display_legend: bool = False, **kwargs):
+    def print(self, module, display_depth: bool = False, legend: bool = False, **kwargs):
+        if legend: self.print_legend()
         print(self.repr(module, display_depth=display_depth, **kwargs))
 
     def repr(self, module, display_depth=False, indent=2, **kwargs):
@@ -86,6 +87,18 @@ class Printer:
                 **kwargs
             )
         return self.__repr_module__(module, display_depth=display_depth, indent=indent)
+
+    def print_legend(self):
+        labels = []
+        lengths = []
+        print(TextStyle(underline=True).apply('Legend:'))
+        for reg_style in self.strategy._registered_styles.values():
+            labels.append(reg_style.style.name_style.apply('▇') + ' ' + reg_style.style.name_style.apply(reg_style.label))
+            lengths.append(len(reg_style.label)+2)
+
+        for i, label in enumerate(labels):
+            print(label, end='\t\t' if (i+1) % 3 != 0 else '\n')
+        print()
 
     def __explore__(self, parent_module, name=""):
         depth = 0
@@ -116,14 +129,15 @@ class Printer:
                 continue
             module_name = (name+'.' if name else '')+key
             mod_str = self.__repr_module__(module, indent=indent + 2, display_depth=display_depth, name=module_name)
-            style = self.strategy.get_style(module_name, module, self.node_params[module_name])
+            style = self.strategy.process(module_name, module, self.node_params[module_name])
+            if isinstance(style, RegisteredStyle): style = style.style
             child_lines.append((key, mod_str, style, self.node_params[module_name].depth))
 
         summarized_lines = summarize_repeated_modules(child_lines)
 
         child_lines_formatted = []
         for key, count, mod_str, style, depth in summarized_lines:
-            stylised_name = style.name_style.apply(f"({key}):") if style.name_style else f"({key}):"
+            stylised_name = style.name_style.apply(f"({key})")+':' if style.name_style else f"({key}):"
             stylised_layer = style.layer_style.apply(mod_str) if style.layer_style and depth == 0 else mod_str
 
             child_lines_formatted.append(_addindent(
@@ -134,7 +148,8 @@ class Printer:
             , 2))
 
         lines = extra_lines + child_lines_formatted
-        style = self.strategy.get_style(name, parent_module, self.node_params[name])
+        style = self.strategy.process(name, parent_module, self.node_params[name])
+        if isinstance(style, RegisteredStyle): style = style.style
         main_str = parent_module._get_name()
 
         if lines:
@@ -144,5 +159,5 @@ class Printer:
             else:
                 main_str += reset_color.to_ansi() + "(\n  " + "\n  ".join(lines) + reset_color.to_ansi() + "\n)"
 
-        main_str = style.layer_style.apply(main_str) if style.layer_style else main_str
+        main_str = style.layer_style.apply(main_str) if style and style.layer_style else main_str
         return main_str

@@ -18,17 +18,41 @@ class ModuleStyle:
     layer_style: Union[TextStyle, FunctionalStyle] = None
     extra_style: Union[TextStyle, FunctionalStyle] = None
 
+@dataclass
+class RegisteredStyle:
+    name: str
+    style: ModuleStyle
+    label: str
 
 class ColorStrategy(ABC):
     """Styling strategy that allocate the corresponding module style to a given module based on registered pattern"""
     _registry = {}
 
+    def __init__(self):
+        self._registered_styles = {}
+
     def precompute(self, module: Module, config: dict, *args, **kwargs):
         # Cannot be abstracted otherwise custom strategy needs to implement it
         pass
 
+    def register_style(self, name, style, label=None):
+        if not getattr(self, "_registered_styles", None):
+            self._registered_styles = {}
+        if name in self._registered_styles:
+            raise NameError(f"Registered style with name `name` already exists")
+
+        style = RegisteredStyle(name, style, label=label if label else name)
+        self._registered_styles[name] = style
+
+    def get(self, name) -> RegisteredStyle:
+        if name not in self._registered_styles:
+            raise NameError(f"Registered style with name `name` does not exist")
+
+        return self._registered_styles[name]
+
+
     @abstractmethod
-    def get_style(self, name: str, module: Module, config: dict, *args, **kwargs) -> ModuleStyle:
+    def process(self, name: str, module: Module, config: dict, *args, **kwargs) -> Union[RegisteredStyle, ModuleStyle]:
         """Return the appropriate color for the module based on some properties given by the strategy
 
         Args:
@@ -86,23 +110,38 @@ class ColorStrategy(ABC):
 @ColorStrategy.register("trainable")
 class TrainableStrategy(ColorStrategy):
     """Styling strategy that handles trainable, non-trainable and mixed trainable layers/modules"""
-    def get_style(self, name, module, config):
+
+    def __init__(self):
+        super().__init__()
+        self.register_style("trainable", style=ModuleStyle(name_style=TextStyle("green")))
+        self.register_style("non trainable", style=ModuleStyle(name_style=TextStyle("red")))
+        self.register_style("mix trainable", style=ModuleStyle(name_style=TextStyle("yellow")))
+
+    def process(self, name, module, config):
         params = list(module.parameters(recurse=True))
         if not params:
             return ModuleStyle()
         elif all(not p.requires_grad for p in params):
-            return ModuleStyle(name_style=TextStyle("red"))
+            return self.get("non trainable")
         elif all(p.requires_grad for p in params):
-            return ModuleStyle(name_style=TextStyle("green"))
-        return ModuleStyle(name_style=TextStyle("yellow")if not config.is_root else None)
+            return self.get("trainable")
+        return self.get("mix trainable") if not config.is_root else None
 
 
 @ColorStrategy.register("gradient")
 class GradientChangeStrategy(ColorStrategy):
 
     def __init__(self):
+        super().__init__()
+
         self.max_change = float("-inf")
         self.changes = {}
+
+        self.register_style("high",     style=ModuleStyle(name_style=TextStyle("red")),     label="high changes")
+        self.register_style("medium",   style=ModuleStyle(name_style=TextStyle("yellow")),  label="medium changes")
+        self.register_style("low",      style=ModuleStyle(name_style=TextStyle("green")),   label="low changes")
+        self.register_style("any",      style=ModuleStyle(name_style=TextStyle("blue")),    label="no change")
+        self.register_style("non trainable",      style=ModuleStyle(name_style=TextStyle(underline=True)),    label="non trainable")
 
     def precompute(self, name, module, config, snapshot):
         if config.is_leaf and len(snapshot.states[name]) >= 2:
@@ -112,29 +151,24 @@ class GradientChangeStrategy(ColorStrategy):
             self.changes[name] = abs(state2 - state1)
             self.max_change = max(self.max_change, self.changes[name])
 
-    def get_style(self, name, module, config):
+    def process(self, name, module, config):
         params = list(module.parameters(recurse=True))
-        if not params:
-            return ModuleStyle()
-        elif all(not p.requires_grad for p in params):
-            return ModuleStyle(name_style=TextStyle(underline=True))
+
+        if not params: return ModuleStyle()
+        elif all(not p.requires_grad for p in params): return self.get("non trainable")
         elif name in self.changes and config.is_leaf:
             if self.max_change > 0: relative_change = self.changes[name] / self.max_change
             else: relative_change = 0
 
-            if relative_change > 0.75:
-                return ModuleStyle(name_style=TextStyle("red"))
-            elif relative_change > 0.5:
-                return ModuleStyle(name_style=TextStyle("yellow"))
-            # print("===")
-            return ModuleStyle(name_style=TextStyle("green"))
-        # else:
-        return ModuleStyle(name_style=TextStyle("blue"))
+            if relative_change > 0.75: return self.get("high")
+            elif relative_change > 0.5: return self.get("medium")
+            return self.get("low")
+        return self.get("any")
 
 
 
 class LayerColorStrategy(ColorStrategy):
-    def get_style(self, module):
+    def process(self, module):
         pass
 
 
@@ -144,5 +178,5 @@ class ConstantColorStrategy(ColorStrategy):
         super().__init__()
         self.color = color
 
-    def get_style(self, name, module, config):
+    def process(self, name, module, config):
         return ModuleStyle(name_style=TextStyle(self.color, Gradient("warm_sunset"), double_underline=True, italic=True))

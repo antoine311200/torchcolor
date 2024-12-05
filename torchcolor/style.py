@@ -74,11 +74,11 @@ class TextStyle:
         fg_chunks, bg_chunks = [], []
         if isinstance(self.fg_style, Gradient):
             fg_chunks = self.fg_style.apply(text)
-        else:
+        elif self.fg_style:
             stylised_text += self.fg_style.to_ansi()
         if isinstance(self.bg_style, Gradient):
             bg_chunks = self.bg_style.apply(text)
-        else:
+        elif self.bg_style:
             stylised_text += self.bg_style.to_ansi(is_background=True)
 
         fg_idx, bg_idx = 0, 0
